@@ -1,48 +1,58 @@
 const express = require("express");
-const fs = require("fs");
+const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-const FEEDBACK_FILE = "feedback.json";
-
-// Load existing feedback
-app.get("/feedback", (req, res) => {
-    fs.readFile(FEEDBACK_FILE, "utf8", (err, data) => {
-        if (err) {
-            return res.status(500).json({ error: "Error reading feedback file" });
-        }
-        res.json(JSON.parse(data));
-    });
+// Create and connect to SQLite database
+const db = new sqlite3.Database("./feedback.db", (err) => {
+    if (err) {
+        console.error("Error connecting to SQLite database:", err.message);
+    } else {
+        console.log("Connected to SQLite database.");
+    }
 });
 
-// Save new feedback
+// Create feedback table
+db.run(`CREATE TABLE IF NOT EXISTS feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    message TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
+
+// Route to submit feedback
 app.post("/submit-feedback", (req, res) => {
     const { username, message } = req.body;
     if (!username || !message) {
-        return res.status(400).json({ error: "Username and message required" });
+        return res.status(400).json({ error: "Username and message are required." });
     }
 
-    const newFeedback = { username, message, date: new Date().toLocaleString() };
-
-    fs.readFile(FEEDBACK_FILE, "utf8", (err, data) => {
-        let feedbackData = [];
-        if (!err && data) {
-            feedbackData = JSON.parse(data);
-        }
-
-        feedbackData.push(newFeedback);
-        fs.writeFile(FEEDBACK_FILE, JSON.stringify(feedbackData, null, 2), (err) => {
+    db.run(`INSERT INTO feedback (username, message) VALUES (?, ?)`, 
+        [username, message], 
+        function (err) {
             if (err) {
-                return res.status(500).json({ error: "Error saving feedback" });
+                return res.status(500).json({ error: err.message });
+            } else {
+                res.json({ success: true, id: this.lastID });
             }
-            res.json({ success: true });
-        });
+        }
+    );
+});
+
+// Route to get all feedback
+app.get("/feedback", (req, res) => {
+    db.all("SELECT * FROM feedback ORDER BY timestamp DESC", [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows);
     });
 });
 
+// Start the server
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
