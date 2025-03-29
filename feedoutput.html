@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Reports</title>
+</head>
+<body>
+    <h1>Feedback Reports</h1>
+    <ul id="feedbackList"></ul>
+
+    <script>
+        function loadFeedback() {
+            const feedbackList = JSON.parse(localStorage.getItem("feedbackData")) || [];
+            const feedbackContainer = document.getElementById("feedbackList");
+            feedbackContainer.innerHTML = "";
+
+            feedbackList.forEach((entry) => {
+                const li = document.createElement("li");
+                li.innerHTML = `<strong>${entry.username}</strong> (${entry.timestamp}): ${entry.message}`;
+                feedbackContainer.appendChild(li);
+            });
+        }
+
+        window.onload = loadFeedback;
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Feedback</title>
+</head>
+<body>
+    <h1>Submit Feedback</h1>
+    <form id="feedbackForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" required>
+        <br>
+        <label for="message">Feedback:</label>
+        <textarea id="message" required></textarea>
+        <br>
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        document.getElementById("feedbackForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById("username").value;
+            const message = document.getElementById("message").value;
+            const timestamp = new Date().toLocaleString();
+
+            if (username && message) {
+                const feedback = { username, message, timestamp };
+                
+                let feedbackList = JSON.parse(localStorage.getItem("feedbackData")) || [];
+                feedbackList.push(feedback);
+                localStorage.setItem("feedbackData", JSON.stringify(feedbackList));
+
+                alert("Feedback submitted!");
+                window.location.href = "feedoutput.html";
+            } else {
+                alert("Please fill in all fields.");
+            }
+        });
+    </script>
+</body>
+</html>
